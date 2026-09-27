@@ -1,0 +1,12 @@
+__pycache__/
+build/
+dist/
+*.spec
+*.jpg
+*.jpeg
+*.png
+*.webp
+temp_*
+output_mejoradas/
+input_proyectos/
+.env

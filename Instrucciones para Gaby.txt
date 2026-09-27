@@ -1,0 +1,46 @@
+﻿=====================================================
+  CALIFORNIA REMODELING - AUTO PHOTO ENHANCER PRO
+  Instrucciones para Gaby
+=====================================================
+
+Hola Gaby! Este sistema esta preparado para procesar fotos de 
+remodelacion (Cocinas, Banos, Piscinas, Techos y Pavers) mejorando
+la iluminacion HDR, levantando sombras y aplicando ultra nitidez.
+
+-----------------------------------------------------
+PASO 1: REQUISITOS PREVIOS (Solo la primera vez)
+-----------------------------------------------------
+1. Tener Python instalado (version 3.10 o superior):
+   https://www.python.org/downloads/
+   *IMPORTANTE: Al instalar Python, marca la casilla abajo que dice:
+    "Add python.exe to PATH"*.
+
+2. Tener instalado Upscayl:
+   https://upscayl.org
+   (Instalalo en la ruta por defecto: C:\Program Files\Upscayl)
+   *Como tienes tarjeta grafica de 8GB de VRAM, el sistema volara
+   y podras usar la maxima calidad sin problemas*.
+
+-----------------------------------------------------
+PASO 2: INSTALAR DEPENDENCIAS (Solo la primera vez)
+-----------------------------------------------------
+Haz doble clic sobre el archivo:
+--> INSTALAR_DEPENDENCIAS.bat
+
+Se abrira una ventana negra y descargara automaticamente
+las librerias necesarias. Solo toma 1 minuto.
+
+-----------------------------------------------------
+PASO 3: INICIAR Y USAR EL SISTEMA
+-----------------------------------------------------
+Cada vez que quieras usarlo, haz doble clic sobre:
+--> INICIAR_SISTEMA.bat
+
+Se abrira automaticamente en tu navegador web donde podras:
+1. Arrastrar y soltar grupos de fotos masivamente.
+2. Elegir el preset o dejarlo en "Auto-detectar".
+3. Elegir entre el "Modo Rapido HDR" o "Modo con Upscayl AI".
+4. Hacer clic en "Procesar Todas y Generar Descarga".
+5. Al terminar, presionar "Descargar Fotos Mejoradas (.ZIP)".
+
+Listo!
