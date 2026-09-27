@@ -99,5 +99,4 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
             f.write(magnific_result_bytes)
         return True, "Procesado con Magnific AI (Window Pull + Upscale)"
     else:
-        cv2.imwrite(str(output_path), img_hdr, jpg_params)
-        return True, f"Fallo API, se aplico mejora local. Detalle: {error_msg}"
+        return False, f"Fallo al contactar Magnific API. Detalle: {error_msg}"
