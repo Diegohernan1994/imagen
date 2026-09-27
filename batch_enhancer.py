@@ -39,7 +39,7 @@ def process_with_magnific_api(image_path, api_key, prompt):
         data = res.json()
         job_id = data.get("task_id") or data.get("id") or data.get("job_id")
         if not job_id:
-            return None, "No se recibio Job ID de Magnific"
+            return None, f"No se recibio Job ID. Respuesta completa de Magnific: {data}"
             
         status_url = f"https://api.magnific.com/v1/ai/image-upscaler/{job_id}" # Guessing status endpoint based on typical REST
         for _ in range(60): 
