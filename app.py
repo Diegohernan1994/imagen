@@ -111,10 +111,10 @@ with tab1:
                         out_path = out_dir / file_obj.name
                         status_text.markdown(f"**Procesando [{i+1}/{total}]:** `{file_obj.name}`...")
                         
-                        enhance_single_image(file_path, out_path, mode=selected_mode, preset=p, api_key=api_key, auto_perspective=auto_perspective)
+                        ok, msg = enhance_single_image(file_path, out_path, mode=selected_mode, preset=p, api_key=api_key, auto_perspective=auto_perspective)
                         
                         target_out = out_path.with_suffix(".jpg")
-                        if target_out.exists():
+                        if ok and target_out.exists():
                             with open(target_out, "rb") as of:
                                 out_bytes = of.read()
                             results_to_display.append({
@@ -123,6 +123,8 @@ with tab1:
                                 "original": file_obj.getvalue(),
                                 "enhanced": out_bytes
                             })
+                        else:
+                            st.error(f"Error procesando {file_obj.name}: {msg}")
                             
                         progress_bar.progress((i + 1) / total)
                         
@@ -194,4 +196,6 @@ with tab2:
                         with col_res:
                             st.caption("Mejorada")
                             st.image(str(target_out), use_container_width=False)
+                    else:
+                        st.error(f"Fallo: {msg}")
 
