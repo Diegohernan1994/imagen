@@ -37,26 +37,34 @@ def process_with_magnific_api(image_path, api_key, prompt):
             return None, f"Error API Magnific: {res.status_code} - {res.text}"
             
         data = res.json()
-        job_id = data.get("task_id") or data.get("id") or data.get("job_id")
+        inner = data.get("data", {})
+        job_id = inner.get("task_id") or data.get("id")
         if not job_id:
             return None, f"No se recibio Job ID. Respuesta completa de Magnific: {data}"
             
-        status_url = f"https://api.magnific.com/v1/ai/image-upscaler/{job_id}" # Guessing status endpoint based on typical REST
+        status_url = f"https://api.magnific.com/v1/ai/image-upscaler/{job_id}"
         for _ in range(60): 
             time.sleep(3)
             st_res = requests.get(status_url, headers=headers)
             if st_res.status_code != 200:
                 continue
             st_data = st_res.json()
-            status = st_data.get("status")
-            if status == "completed" or status == "succeeded":
-                result_url = st_data.get("result_url") or st_data.get("output")
-                if result_url:
-                    final_res = requests.get(result_url)
-                    return final_res.content, "Exito"
-                return None, "No result URL"
-            elif status == "failed":
-                return None, "Status failed en Magnific"
+            st_inner = st_data.get("data", {})
+            status = st_inner.get("status", "").upper()
+            
+            if status in ["COMPLETED", "SUCCEEDED", "SUCCESS"]:
+                generated = st_inner.get("generated", [])
+                if generated and isinstance(generated, list):
+                    # Guessing the url key: "url", "image_url", or just the string if it's a list of strings
+                    first_gen = generated[0]
+                    result_url = first_gen if isinstance(first_gen, str) else (first_gen.get("url") or first_gen.get("image_url"))
+                    
+                    if result_url:
+                        final_res = requests.get(result_url)
+                        return final_res.content, "Exito"
+                return None, f"Status Completado pero no hay URL. Data: {st_data}"
+            elif status in ["FAILED", "ERROR"]:
+                return None, f"Status failed en Magnific: {st_data}"
         return None, "Timeout esperando a Magnific"
     except Exception as e:
         return None, f"Excepcion: {str(e)}"
