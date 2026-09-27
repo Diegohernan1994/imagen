@@ -90,6 +90,7 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
         
     # Guardar imagen cruda (solo con perspectiva corregida) para Magnific
     # No le aplicamos el HDR local porque arruina el contraste antes de la IA
+    temp_up = str(output_path.parent / f"_temp_{output_path.stem}.jpg")
     cv2.imwrite(temp_up, img, jpg_params)
     
     magnific_prompt = "professional real estate interior photography, perfect lighting, ultra detailed, clear exterior view outside window, 4k resolution, architectural digest"
