@@ -26,8 +26,8 @@ def process_with_magnific_api(image_path, api_key, prompt):
     payload = {
         "image": encoded,
         "prompt": prompt,
-        "creativity": 3,
-        "hdr": 3,
+        "creativity": 6,
+        "hdr": 6,
         "scale_factor": "2x"
     }
     
@@ -88,8 +88,9 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
         cv2.imwrite(str(output_path), img_hdr, jpg_params)
         return True, "Procesado localmente (Sin API)"
         
-    temp_up = str(output_path.parent / f"_temp_{output_path.stem}.jpg")
-    cv2.imwrite(temp_up, img_hdr, jpg_params)
+    # Guardar imagen cruda (solo con perspectiva corregida) para Magnific
+    # No le aplicamos el HDR local porque arruina el contraste antes de la IA
+    cv2.imwrite(temp_up, img, jpg_params)
     
     magnific_prompt = "professional real estate interior photography, perfect lighting, ultra detailed, clear exterior view outside window, 4k resolution, architectural digest"
     if preset == "Kitchen":
