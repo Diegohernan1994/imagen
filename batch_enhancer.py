@@ -21,7 +21,7 @@ def process_with_magnific_api(image_path, api_key, prompt):
         "Content-Type": "application/json"
     }
     
-    submit_url = "https://api.magnific.ai/v1/ai/image-upscaler"
+    submit_url = "https://api.magnific.com/v1/ai/image-upscaler"
     
     payload = {
         "image": encoded,
@@ -41,7 +41,7 @@ def process_with_magnific_api(image_path, api_key, prompt):
         if not job_id:
             return None, "No se recibio Job ID de Magnific"
             
-        status_url = f"https://api.magnific.ai/v1/ai/image-upscaler/{job_id}" # Guessing status endpoint based on typical REST
+        status_url = f"https://api.magnific.com/v1/ai/image-upscaler/{job_id}" # Guessing status endpoint based on typical REST
         for _ in range(60): 
             time.sleep(3)
             st_res = requests.get(status_url, headers=headers)
