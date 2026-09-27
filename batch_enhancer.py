@@ -9,7 +9,7 @@ from enhancer import enhance_hdr_and_sharpness, correct_perspective
 
 VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
-def process_with_magnific_api(image_path, api_key, prompt):
+def process_with_magnific_api(image_path, api_key, prompt, creativity=8, hdr=7, resemblance=-2, engine="magnific_illusio"):
     with open(image_path, "rb") as f:
         img_bytes = f.read()
         
@@ -26,8 +26,10 @@ def process_with_magnific_api(image_path, api_key, prompt):
     payload = {
         "image": encoded,
         "prompt": prompt,
-        "creativity": 6,
-        "hdr": 6,
+        "creativity": creativity,
+        "hdr": hdr,
+        "resemblance": resemblance,
+        "engine": engine,
         "scale_factor": "2x"
     }
     
@@ -93,13 +95,23 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
     temp_up = str(output_path.parent / f"_temp_{output_path.stem}.jpg")
     cv2.imwrite(temp_up, img, jpg_params)
     
-    magnific_prompt = "professional real estate interior photography, perfect lighting, ultra detailed, clear exterior view outside window, 4k resolution, architectural digest"
     if preset == "Kitchen":
-        magnific_prompt = "professional kitchen remodeling photography, modern design, perfect lighting, exterior view through window, 4k"
+        magnific_prompt = "Award-winning architectural interior photography, luxury modern kitchen, rich natural warm wood tones, black island, clean white quartz, perfect balanced HDR lighting, clear window view showing lush green vibrant backyard garden with trees and deep blue sky, no blown out windows, no overexposure, 8k resolution"
     elif preset == "Pool":
-        magnific_prompt = "luxury backyard pool and spa, hardscaping, perfect blue water, sunny day, professional real estate photography"
+        magnific_prompt = "Luxury resort backyard pool and spa, custom hardscaping, crystal clear turquoise water, lush landscaping, sunny California weather, architectural photography, vibrant colors, 8k"
+    elif preset == "Bathroom":
+        magnific_prompt = "Luxury modern bathroom remodel, spa-like atmosphere, marble tiles, elegant fixtures, soft warm flattering lighting, architectural digest, crisp 8k details"
+    elif preset == "Roofing":
+        magnific_prompt = "Pristine residential roofing, modern home exterior, crisp shingle textures, sunny blue sky, clean architectural photography, 8k"
+    elif preset == "Pavers":
+        magnific_prompt = "Luxury stone pavers driveway and patio, outdoor living space, rich stone texture, lush green landscaping, sunny daylight, architectural photography, 8k"
+    else:
+        magnific_prompt = "Award-winning architectural interior photography, luxury home, perfect balanced HDR lighting, rich textures, deep blacks, clear window view showing lush green trees and clear blue sky, no blown out windows, architectural digest, 8k"
         
-    magnific_result_bytes, error_msg = process_with_magnific_api(temp_up, api_key, magnific_prompt)
+    magnific_result_bytes, error_msg = process_with_magnific_api(
+        temp_up, api_key, magnific_prompt, 
+        creativity=8, hdr=7, resemblance=-2, engine="magnific_illusio"
+    )
     
     if os.path.exists(temp_up):
         os.remove(temp_up)
