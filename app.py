@@ -32,7 +32,7 @@ st.markdown("""
 with st.sidebar:
     st.header("⚙️ Configuracion Nube")
     st.info("Para lograr calidad 'Revista' (Window Pulls y alta definicion), ingresa tu API Key de Magnific.")
-    api_key = st.text_input("Magnific API Key", type="password")
+    env_key = os.getenv("MAGNIFIC_API_KEY", ""); api_key = st.text_input("Magnific API Key", type="password", value=env_key)
     
     st.markdown("---")
     auto_perspective = st.toggle("Enderezar Paredes Automaticamente", value=True)
