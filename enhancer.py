@@ -47,52 +47,55 @@ def balance_white_conservative(img):
     # Mantiene la calidez y el contraste original del piso y ambiente
     return img
 
-def enhance_hdr_and_sharpness(img, preset="General", scale=1):
+def prepare_photographic_base(img, preset="General"):
     """
-    Pipeline Fotográfico Inmobiliario Mejorado:
-    - Nitidez de alta definición (High-Pass Unsharp Masking)
-    - Recuperación inteligente de rango dinámico sin blanquear
-    - Contraste rico y profundo en maderas y pisos
+    Prepara la fotografía para la IA y para la entrega final:
+    1. Elimina la 'neblina' blanca típica de lentes de celular (Dehazing automático / Black-point stretch).
+    2. Convierte los negros deslavados (gris) en negros puros y profundos (#151515).
+    3. Realza la riqueza de tonos según el preset (maderas doradas, azulejos limpios, césped y agua).
     """
-    h, w = img.shape[:2]
-    
-    # 1. Escalar 2x si se solicita manteniendo definicion
-    if scale > 1:
-        img = cv2.resize(img, (w * scale, h * scale), interpolation=cv2.INTER_LANCZOS4)
+    if img is None:
+        return img
         
-    # 2. Separar luminosidad en espacio LAB
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
+    # 1. Corrección de Rango Dinámico y Punto Negro (Dehaze)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    p_low = float(np.percentile(gray, 1.2)) # punto negro
+    p_high = float(np.percentile(gray, 99.7)) # punto blanco
     
-    # CLAHE mucho mas sutil (clipLimit bajo) para no lavar/quemar blancos
-    clip_limit = 1.3 if preset in ["Kitchen", "Bathroom"] else 1.2
-    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
-    l_clahe = clahe.apply(l)
-    
-    # Solo un 15% de realce de sombras para evitar lavar los tonos oscuros/madera
-    l_final = cv2.addWeighted(l_clahe, 0.25, l, 0.75, 0)
-    
-    lab_merged = cv2.merge((l_final, a, b))
-    bgr = cv2.cvtColor(lab_merged, cv2.COLOR_LAB2BGR)
-    
-    # 3. Nitidez y Enfoque Profesional tipo Lightroom (Clarity + High-Pass)
-    # Crea microcontraste en los bordes de azulejos, perillas, vetas de madera
-    blur_fine = cv2.GaussianBlur(bgr, (0, 0), 1.2)
-    sharp = cv2.addWeighted(bgr, 1.6, blur_fine, -0.6, 0)
-    
-    # 4. Color y Vibrancia natural (sin perder los dorados del piso de madera)
-    hsv = cv2.cvtColor(sharp, cv2.COLOR_BGR2HSV).astype(np.float32)
+    if p_high > p_low + 30: # Evitar división por cero o imágenes corruptas
+        img_f = img.astype(np.float32)
+        # Estiramiento de contraste protegiendo el rango
+        stretched = np.clip((img_f - p_low) * (255.0 / (p_high - p_low)), 0, 255).astype(np.uint8)
+    else:
+        stretched = img.copy()
+        
+    # 2. Riqueza de Color y Vibrancia Natural
+    hsv = cv2.cvtColor(stretched, cv2.COLOR_BGR2HSV).astype(np.float32)
     h, s, v = cv2.split(hsv)
     
     if preset == "Pool":
-        is_blue = (h >= 85) & (h <= 135)
-        s[is_blue] = np.clip(s[is_blue] * 1.25, 0, 255)
-        s[~is_blue] = np.clip(s[~is_blue] * 1.05, 0, 255)
+        # Intensifica el azul/turquesa del agua y verde del jardín
+        is_water = (h >= 80) & (h <= 135)
+        s[is_water] = np.clip(s[is_water] * 1.30, 0, 255)
+        s[~is_water] = np.clip(s[~is_water] * 1.12, 0, 255)
+    elif preset in ["Kitchen", "General"]:
+        # Intensifica la calidez de pisos y muebles de madera (tonos amarillos/naranjas/marrones)
+        is_warm = (h >= 10) & (h <= 45)
+        s[is_warm] = np.clip(s[is_warm] * 1.20, 0, 255)
+        s[~is_warm] = np.clip(s[~is_warm] * 1.08, 0, 255)
+    elif preset == "Pavers":
+        # Aumenta contraste y textura en piedras y adoquines
+        s = np.clip(s * 1.15, 0, 255)
+    elif preset == "Roofing":
+        # Intensifica cielo azul de fondo
+        is_sky = (h >= 95) & (h <= 130)
+        s[is_sky] = np.clip(s[is_sky] * 1.25, 0, 255)
+        s[~is_sky] = np.clip(s[~is_sky] * 1.10, 0, 255)
     else:
-        # Preserva el tono original de la madera aumentando sutilmente la vivacidad
-        s = np.clip(s * 1.06, 0, 255)
+        s = np.clip(s * 1.10, 0, 255)
         
     final_hsv = cv2.merge((h, s, v)).astype(np.uint8)
     enhanced = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
     
     return enhanced
+

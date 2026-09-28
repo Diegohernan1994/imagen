@@ -5,11 +5,11 @@ import requests
 import time
 import base64
 from pathlib import Path
-from enhancer import enhance_hdr_and_sharpness, correct_perspective
+from enhancer import prepare_photographic_base, correct_perspective
 
 VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
-def process_with_magnific_api(image_path, api_key, prompt, creativity=8, hdr=7, resemblance=-2, engine="magnific_illusio"):
+def process_with_magnific_api(image_path, api_key, prompt, creativity=4, hdr=5, resemblance=1, engine="magnific_sparkle"):
     with open(image_path, "rb") as f:
         img_bytes = f.read()
         
@@ -83,34 +83,34 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
     if auto_perspective:
         img = correct_perspective(img)
         
-    img_hdr = enhance_hdr_and_sharpness(img, preset=preset, scale=1)
+    # Pre-procesado fotográfico: elimina neblina de celular, restaura negros puros y realza colores naturales
+    img_preprocessed = prepare_photographic_base(img, preset=preset)
     jpg_params = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
     
     if mode == "rapido" or not api_key:
-        cv2.imwrite(str(output_path), img_hdr, jpg_params)
-        return True, "Procesado localmente (Sin API)"
+        cv2.imwrite(str(output_path), img_preprocessed, jpg_params)
+        return True, "Procesado localmente con Dehaze y Corrección Fotográfica"
         
-    # Guardar imagen cruda (solo con perspectiva corregida) para Magnific
-    # No le aplicamos el HDR local porque arruina el contraste antes de la IA
     temp_up = str(output_path.parent / f"_temp_{output_path.stem}.jpg")
-    cv2.imwrite(temp_up, img, jpg_params)
+    cv2.imwrite(temp_up, img_preprocessed, jpg_params)
     
+    # Prompts de alta gama orientados a fotografía arquitectónica limpia y realista
     if preset == "Kitchen":
-        magnific_prompt = "Award-winning architectural interior photography, luxury modern kitchen, rich natural warm wood tones, black island, clean white quartz, perfect balanced HDR lighting, clear window view showing lush green vibrant backyard garden with trees and deep blue sky, no blown out windows, no overexposure, 8k resolution"
+        magnific_prompt = "Award-winning interior architecture photograph, luxury modern kitchen remodel, clean matte white shaker cabinets, rich warm oak wood floors, deep black island accents, crisp natural lighting, realistic materials, architectural digest, ultra-sharp 8k"
     elif preset == "Pool":
-        magnific_prompt = "Luxury resort backyard pool and spa, custom hardscaping, crystal clear turquoise water, lush landscaping, sunny California weather, architectural photography, vibrant colors, 8k"
+        magnific_prompt = "Luxury resort backyard pool and spa, custom hardscaping, crystal clear turquoise water with clean reflections, natural stone pavers, lush green California landscaping, bright daylight, architectural photograph, 8k"
     elif preset == "Bathroom":
-        magnific_prompt = "Luxury modern bathroom remodel, spa-like atmosphere, marble tiles, elegant fixtures, soft warm flattering lighting, architectural digest, crisp 8k details"
+        magnific_prompt = "High-end luxury modern bathroom remodel, pristine marble tiles, sparkling modern chrome fixtures, warm natural ambient lighting, clean grout lines, spa atmosphere, architectural digest, 8k"
     elif preset == "Roofing":
-        magnific_prompt = "Pristine residential roofing, modern home exterior, crisp shingle textures, sunny blue sky, clean architectural photography, 8k"
+        magnific_prompt = "Pristine residential roofing architecture photography, clean architectural shingles with defined texture, modern house exterior, bright clear blue sky, sharp clean lines, 8k"
     elif preset == "Pavers":
-        magnific_prompt = "Luxury stone pavers driveway and patio, outdoor living space, rich stone texture, lush green landscaping, sunny daylight, architectural photography, 8k"
+        magnific_prompt = "Luxury outdoor living space, high-end stone pavers patio and driveway, rich textured stonework, lush green foliage and lawn, sunny daylight, architectural digest, 8k"
     else:
-        magnific_prompt = "Award-winning architectural interior photography, luxury home, perfect balanced HDR lighting, rich textures, deep blacks, clear window view showing lush green trees and clear blue sky, no blown out windows, architectural digest, 8k"
+        magnific_prompt = "Award-winning architectural interior and exterior photography, high-end California home remodel, perfect natural lighting balance, rich true blacks, natural textures, clean lines, architectural digest, 8k"
         
     magnific_result_bytes, error_msg = process_with_magnific_api(
         temp_up, api_key, magnific_prompt, 
-        creativity=8, hdr=7, resemblance=-2, engine="magnific_illusio"
+        creativity=4, hdr=5, resemblance=1, engine="magnific_sparkle"
     )
     
     if os.path.exists(temp_up):
@@ -119,6 +119,7 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
     if magnific_result_bytes:
         with open(output_path, "wb") as f:
             f.write(magnific_result_bytes)
-        return True, "Procesado con Magnific AI (Window Pull + Upscale)"
+        return True, "Procesado con Magnific AI (Sparkle Pro + Calidad Revista)"
     else:
         return False, f"Fallo al contactar Magnific API. Detalle: {error_msg}"
+
