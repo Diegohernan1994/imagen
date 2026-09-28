@@ -37,6 +37,12 @@ with st.sidebar:
     st.markdown("---")
     auto_perspective = st.toggle("Enderezar Paredes Automaticamente", value=True)
     st.caption("Endereza la foto localmente antes de enviarla a la API.")
+    
+    st.markdown("---")
+    custom_prompt = st.text_area(
+        "Instrucciones extra para la IA (Opcional)",
+        placeholder="Ej: sombrilla en el patio exterior, césped verde... (Vacío = Automático de Revista)"
+    )
 
 st.title("California Remodeling — Auto Photo Enhancer Pro (Cloud)")
 st.markdown("Arrastra tus fotos de proyectos, procesalas masivamente con **Magnific AI** y descargalas en **JPG de Maxima Calidad**.")
@@ -120,7 +126,7 @@ with tab1:
                         out_path = out_dir / file_obj.name
                         status_text.markdown(f"**Procesando [{i+1}/{total}]:** `{file_obj.name}`...")
                         
-                        ok, msg = enhance_single_image(file_path, out_path, mode=selected_mode, preset=p, api_key=api_key, auto_perspective=auto_perspective)
+                        ok, msg = enhance_single_image(file_path, out_path, mode=selected_mode, preset=p, api_key=api_key, auto_perspective=auto_perspective, custom_prompt=custom_prompt)
                         
                         target_out = out_path.with_suffix(".jpg")
                         if ok and target_out.exists():
@@ -207,7 +213,7 @@ with tab2:
                 st.error("Falta ingresar Magnific API Key en el panel lateral.")
             else:
                 with st.spinner("Procesando..."):
-                    ok, msg = enhance_single_image(temp_input, temp_output, mode=selected_m, preset=test_preset, api_key=api_key, auto_perspective=auto_perspective)
+                    ok, msg = enhance_single_image(temp_input, temp_output, mode=selected_m, preset=test_preset, api_key=api_key, auto_perspective=auto_perspective, custom_prompt=custom_prompt)
                     target_out = temp_output.with_suffix(".jpg")
                     if ok and target_out.exists():
                         st.success(f"Estado: {msg}")
