@@ -26,9 +26,9 @@ def process_with_magnific_api(image_path, api_key, prompt, creativity=4, hdr=5, 
     payload = {
         "image": encoded,
         "prompt": prompt,
-        "creativity": creativity,
-        "hdr": hdr,
-        "resemblance": resemblance,
+        "creativity": int(round(creativity)),
+        "hdr": int(round(hdr)),
+        "resemblance": int(round(resemblance)),
         "engine": engine,
         "scale_factor": "2x"
     }
@@ -184,7 +184,7 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
     # hdr: 3.5
     magnific_result_bytes, error_msg = process_with_magnific_api(
         temp_up, api_key, magnific_prompt, 
-        creativity=4, hdr=3.5, resemblance=0, engine="magnific_illusio"
+        creativity=4, hdr=3, resemblance=0, engine="magnific_illusio"
     )
     
     if os.path.exists(temp_up):
