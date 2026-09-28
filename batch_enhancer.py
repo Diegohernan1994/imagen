@@ -90,14 +90,14 @@ def process_with_magnific_relight(image_path, api_key, prompt):
         "prompt": prompt,
         "change_background": True,
         "light_transfer_strength": 80,
-        "style": "photorealistic",
+        "style": "clean",
         "advanced_settings": {
             "whites": 50,
             "blacks": 60,
             "brightness": 35,
             "contrast": 45,
             "saturation": 50,
-            "engine": "sparkle"
+            "engine": "real"
         }
     }
     
