@@ -33,7 +33,7 @@ def correct_perspective(img):
     (h, w) = img.shape[:2]
     center = (w // 2, h // 2)
     # Rotar para alinear las verticales (opuesto a la inclinacion detectada)
-    M = cv2.getRotationMatrix2D(center, median_angle, 1.0)
+    M = cv2.getRotationMatrix2D(center, -median_angle, 1.0)
     rotated = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     
     return rotated

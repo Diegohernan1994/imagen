@@ -71,7 +71,74 @@ def process_with_magnific_api(image_path, api_key, prompt, creativity=4, hdr=5, 
     except Exception as e:
         return None, f"Excepcion: {str(e)}"
 
-def enhance_single_image(input_path, output_path, mode="magnific", preset="General", api_key=None, auto_perspective=True):
+def process_with_magnific_relight(image_path, api_key, prompt):
+    with open(image_path, "rb") as f:
+        img_bytes = f.read()
+        
+    encoded = base64.b64encode(img_bytes).decode('utf-8')
+    
+    headers = {
+        "x-magnific-api-key": api_key,
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    submit_url = "https://api.magnific.com/v1/ai/image-relight"
+    
+    payload = {
+        "image": encoded,
+        "prompt": prompt,
+        "change_background": True,
+        "light_transfer_strength": 80,
+        "style": "photorealistic",
+        "advanced_settings": {
+            "whites": 50,
+            "blacks": 60,
+            "brightness": 35,
+            "contrast": 45,
+            "saturation": 50,
+            "engine": "sparkle"
+        }
+    }
+    
+    try:
+        res = requests.post(submit_url, json=payload, headers=headers, timeout=30)
+        if res.status_code != 200:
+            return None, f"Error API Magnific Relight: {res.status_code} - {res.text}"
+            
+        data = res.json()
+        inner = data.get("data", {})
+        job_id = inner.get("task_id") or data.get("id")
+        if not job_id:
+            return None, f"No se recibio Job ID de Relight. Respuesta: {data}"
+            
+        status_url = f"https://api.magnific.com/v1/ai/image-relight/{job_id}"
+        for _ in range(60): 
+            time.sleep(3)
+            st_res = requests.get(status_url, headers=headers)
+            if st_res.status_code != 200:
+                continue
+            st_data = st_res.json()
+            st_inner = st_data.get("data", {})
+            status = st_inner.get("status", "").upper()
+            
+            if status in ["COMPLETED", "SUCCEEDED", "SUCCESS"]:
+                generated = st_inner.get("generated", [])
+                if generated and isinstance(generated, list):
+                    first_gen = generated[0]
+                    result_url = first_gen if isinstance(first_gen, str) else (first_gen.get("url") or first_gen.get("image_url"))
+                    
+                    if result_url:
+                        final_res = requests.get(result_url)
+                        return final_res.content, "Exito Relight"
+                return None, f"Relight completado sin URL: {st_data}"
+            elif status in ["FAILED", "ERROR"]:
+                return None, f"Status failed en Relight: {st_data}"
+        return None, "Timeout esperando a Magnific Relight"
+    except Exception as e:
+        return None, f"Excepcion Relight: {str(e)}"
+
+def enhance_single_image(input_path, output_path, mode="magnific_relight", preset="General", api_key=None, auto_perspective=True):
     input_path = Path(input_path)
     output_path = Path(output_path).with_suffix(".jpg")
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,24 +161,43 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
     temp_up = str(output_path.parent / f"_temp_{output_path.stem}.jpg")
     cv2.imwrite(temp_up, img_preprocessed, jpg_params)
     
-    # Prompts de alta gama orientados a fotografía arquitectónica limpia y realista
-    if preset == "Kitchen":
-        magnific_prompt = "Award-winning interior architecture photograph, luxury modern kitchen remodel, clean matte white shaker cabinets, rich warm oak wood floors, deep black island accents, crisp natural lighting, realistic materials, architectural digest, ultra-sharp 8k"
-    elif preset == "Pool":
-        magnific_prompt = "Luxury resort backyard pool and spa, custom hardscaping, crystal clear turquoise water with clean reflections, natural stone pavers, lush green California landscaping, bright daylight, architectural photograph, 8k"
-    elif preset == "Bathroom":
-        magnific_prompt = "High-end luxury modern bathroom remodel, pristine marble tiles, sparkling modern chrome fixtures, warm natural ambient lighting, clean grout lines, spa atmosphere, architectural digest, 8k"
-    elif preset == "Roofing":
-        magnific_prompt = "Pristine residential roofing architecture photography, clean architectural shingles with defined texture, modern house exterior, bright clear blue sky, sharp clean lines, 8k"
-    elif preset == "Pavers":
-        magnific_prompt = "Luxury outdoor living space, high-end stone pavers patio and driveway, rich textured stonework, lush green foliage and lawn, sunny daylight, architectural digest, 8k"
+    if mode == "magnific_relight":
+        # Modo Relight & Background: arregla luces quemadas y regenera paisajes de fondo
+        if preset == "Kitchen":
+            relight_prompt = "Award-winning interior architecture photograph, luxury modern kitchen remodel, sunny day, clear transparent sliding glass doors with direct view to a lush green sunny California backyard garden with green trees and clear blue sky, no blown out windows, perfectly balanced high dynamic range lighting, rich warm wood, matte black island, architectural digest"
+        elif preset == "Pool":
+            relight_prompt = "Luxury resort backyard pool and spa, crystal clear turquoise water, natural travertine stone pavers, lush green landscaping, bright sunny California sky, architectural photograph, 8k"
+        elif preset == "Bathroom":
+            relight_prompt = "Luxury spa bathroom remodel, pristine marble tiles, warm natural vanity lighting, sparkling clean glass and chrome, architectural digest, 8k"
+        elif preset == "Roofing":
+            relight_prompt = "Pristine residential roofing architecture photography, clean architectural shingles with defined texture, modern house exterior, bright clear blue sky, sharp clean lines, 8k"
+        elif preset == "Pavers":
+            relight_prompt = "Luxury outdoor living space, high-end stone pavers patio and driveway, rich textured stonework, lush green foliage and lawn, sunny daylight, architectural digest, 8k"
+        else:
+            relight_prompt = "Award-winning architectural interior photography, sunny day, balanced lighting, clear view outside windows showing lush green garden and blue sky, rich contrast, architectural digest, 8k"
+            
+        magnific_result_bytes, error_msg = process_with_magnific_relight(temp_up, api_key, relight_prompt)
+        engine_label = "Magnific Relight & Background"
     else:
-        magnific_prompt = "Award-winning architectural interior and exterior photography, high-end California home remodel, perfect natural lighting balance, rich true blacks, natural textures, clean lines, architectural digest, 8k"
-        
-    magnific_result_bytes, error_msg = process_with_magnific_api(
-        temp_up, api_key, magnific_prompt, 
-        creativity=4, hdr=5, resemblance=1, engine="magnific_sparkle"
-    )
+        # Modo Upscaler tradicional
+        if preset == "Kitchen":
+            magnific_prompt = "Award-winning interior architecture photograph, luxury modern kitchen remodel, clean matte white shaker cabinets, rich warm oak wood floors, deep black island accents, crisp natural lighting, realistic materials, architectural digest, ultra-sharp 8k"
+        elif preset == "Pool":
+            magnific_prompt = "Luxury resort backyard pool and spa, custom hardscaping, crystal clear turquoise water with clean reflections, natural stone pavers, lush green California landscaping, bright daylight, architectural photograph, 8k"
+        elif preset == "Bathroom":
+            magnific_prompt = "High-end luxury modern bathroom remodel, pristine marble tiles, sparkling modern chrome fixtures, warm natural ambient lighting, clean grout lines, spa atmosphere, architectural digest, 8k"
+        elif preset == "Roofing":
+            magnific_prompt = "Pristine residential roofing architecture photography, clean architectural shingles with defined texture, modern house exterior, bright clear blue sky, sharp clean lines, 8k"
+        elif preset == "Pavers":
+            magnific_prompt = "Luxury outdoor living space, high-end stone pavers patio and driveway, rich textured stonework, lush green foliage and lawn, sunny daylight, architectural digest, 8k"
+        else:
+            magnific_prompt = "Award-winning architectural interior and exterior photography, high-end California home remodel, perfect natural lighting balance, rich true blacks, natural textures, clean lines, architectural digest, 8k"
+            
+        magnific_result_bytes, error_msg = process_with_magnific_api(
+            temp_up, api_key, magnific_prompt, 
+            creativity=4, hdr=5, resemblance=1, engine="magnific_sparkle"
+        )
+        engine_label = "Magnific AI Sparkle Pro"
     
     if os.path.exists(temp_up):
         os.remove(temp_up)
@@ -119,7 +205,8 @@ def enhance_single_image(input_path, output_path, mode="magnific", preset="Gener
     if magnific_result_bytes:
         with open(output_path, "wb") as f:
             f.write(magnific_result_bytes)
-        return True, "Procesado con Magnific AI (Sparkle Pro + Calidad Revista)"
+        return True, f"Procesado con éxito con {engine_label}"
     else:
-        return False, f"Fallo al contactar Magnific API. Detalle: {error_msg}"
+        return False, f"Fallo al contactar API Magnific. Detalle: {error_msg}"
+
 

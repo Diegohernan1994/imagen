@@ -61,18 +61,27 @@ with tab1:
     with col2:
         mode_choice = st.radio(
             "Motor de Procesamiento",
-            ["Magnific AI (Calidad Revista: Window Pull + 4K)", "Modo Local Rapido (Solo HDR y Perspectiva)"],
+            [
+                "Magnific Relight (Reconstruye iluminación quemada y paisaje exterior)",
+                "Magnific Upscaler Sparkle (Solo Super-Resolución y Nitidez)",
+                "Modo Local Rapido (Dehaze + Contraste, sin API)"
+            ],
             index=0
         )
         
-    selected_mode = "magnific" if "Magnific" in mode_choice else "rapido"
+    if "Relight" in mode_choice:
+        selected_mode = "magnific_relight"
+    elif "Magnific" in mode_choice or "Upscaler" in mode_choice:
+        selected_mode = "magnific"
+    else:
+        selected_mode = "rapido"
     
     if uploaded_files:
         st.info(f"Se cargaron {len(uploaded_files)} fotos listas para procesar.")
         
         if st.button("Procesar Todas y Ver Comparativas", type="primary", use_container_width=True):
-            if selected_mode == "magnific" and not api_key:
-                st.error("Por favor, ingresa tu Magnific API Key en el panel lateral para usar el modo Magnific AI.")
+            if selected_mode != "rapido" and not api_key:
+                st.error("Por favor, ingresa tu Magnific API Key en el panel lateral para usar los motores de Magnific AI.")
             else:
                 progress_bar = st.progress(0)
                 status_text = st.empty()
@@ -176,12 +185,25 @@ with tab2:
         with col_t1:
             test_preset = st.selectbox("Categoria / Preset", ["Kitchen", "Bathroom", "Pool", "Roofing", "Pavers", "General"], key="test_cat")
         with col_t2:
-            test_mode = st.radio("Motor", ["Magnific AI (Calidad Revista)", "Modo Local Rapido"], key="test_single_m")
+            test_mode = st.radio(
+                "Motor",
+                [
+                    "Magnific Relight (Ventanas y Luz)",
+                    "Magnific Upscaler (Nitidez)",
+                    "Modo Local Rapido"
+                ],
+                key="test_single_m"
+            )
             
-        selected_m = "magnific" if "Magnific" in test_mode else "rapido"
+        if "Relight" in test_mode:
+            selected_m = "magnific_relight"
+        elif "Magnific" in test_mode or "Upscaler" in test_mode:
+            selected_m = "magnific"
+        else:
+            selected_m = "rapido"
         
         if st.button("Mejorar Foto de Prueba"):
-            if selected_m == "magnific" and not api_key:
+            if selected_m != "rapido" and not api_key:
                 st.error("Falta ingresar Magnific API Key en el panel lateral.")
             else:
                 with st.spinner("Procesando..."):
